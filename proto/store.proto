@@ -11,6 +11,9 @@ service KeyValueStore {
 
   rpc restore(RestoreRequest) returns (RestoreResponse);
 
+  rpc canCommit(CommitRequest) returns (CommitResponse);
+
+  rpc doCommit(CommitRequest) returns (CommitResponse);
 }
 
 message PutRequest {
@@ -43,6 +46,16 @@ message RestoreRequest {}
 
 message RestoreResponse {
   bool success = 1;
+}
+
+message CommitRequest {
+  string key = 1;
+  string value = 2;
+}
+
+message CommitResponse {
+  bool success = 1;
+  string message = 2;
 }
 
 message Empty {

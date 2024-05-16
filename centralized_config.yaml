@@ -1,0 +1,10 @@
+master:
+  ip: 127.0.0.1
+  port: 32770
+slaves:
+  - id: slave_1
+    ip: 127.0.0.1
+    port: 32771
+  - id: slave_2
+    ip: 127.0.0.1
+    port: 32772
