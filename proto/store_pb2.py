@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11proto/store.proto\x12\x10\x64istributedstore\"(\n\nPutRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"\x1e\n\x0bPutResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"\x19\n\nGetRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\"+\n\x0bGetResponse\x12\r\n\x05value\x18\x01 \x01(\t\x12\r\n\x05\x66ound\x18\x02 \x01(\x08\"\"\n\x0fSlowDownRequest\x12\x0f\n\x07seconds\x18\x01 \x01(\x05\"#\n\x10SlowDownResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"\x10\n\x0eRestoreRequest\"\"\n\x0fRestoreResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"+\n\rCommitRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"2\n\x0e\x43ommitResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x07\n\x05\x45mpty2\xd9\x03\n\rKeyValueStore\x12\x42\n\x03put\x12\x1c.distributedstore.PutRequest\x1a\x1d.distributedstore.PutResponse\x12\x42\n\x03get\x12\x1c.distributedstore.GetRequest\x1a\x1d.distributedstore.GetResponse\x12Q\n\x08slowDown\x12!.distributedstore.SlowDownRequest\x1a\".distributedstore.SlowDownResponse\x12N\n\x07restore\x12 .distributedstore.RestoreRequest\x1a!.distributedstore.RestoreResponse\x12N\n\tcanCommit\x12\x1f.distributedstore.CommitRequest\x1a .distributedstore.CommitResponse\x12M\n\x08\x64oCommit\x12\x1f.distributedstore.CommitRequest\x1a .distributedstore.CommitResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11proto/store.proto\x12\x10\x64istributedstore\"(\n\nPutRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"\x1e\n\x0bPutResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"\x19\n\nGetRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\"+\n\x0bGetResponse\x12\r\n\x05value\x18\x01 \x01(\t\x12\r\n\x05\x66ound\x18\x02 \x01(\x08\" \n\x0fSlowdownRequest\x12\r\n\x05\x64\x65lay\x18\x01 \x01(\x05\"#\n\x10SlowdownResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"\x10\n\x0eRestoreRequest\"\"\n\x0fRestoreResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\".\n\x10\x43\x61nCommitRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"-\n\x0f\x44oCommitRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"!\n\x0e\x43ommitResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"\x10\n\x0e\x44oAbortRequest\"\"\n\x0f\x44oAbortResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"\x07\n\x05\x45mpty2\xae\x04\n\rKeyValueStore\x12\x42\n\x03put\x12\x1c.distributedstore.PutRequest\x1a\x1d.distributedstore.PutResponse\x12\x42\n\x03get\x12\x1c.distributedstore.GetRequest\x1a\x1d.distributedstore.GetResponse\x12Q\n\x08slowDown\x12!.distributedstore.SlowdownRequest\x1a\".distributedstore.SlowdownResponse\x12N\n\x07restore\x12 .distributedstore.RestoreRequest\x1a!.distributedstore.RestoreResponse\x12Q\n\tcanCommit\x12\".distributedstore.CanCommitRequest\x1a .distributedstore.CommitResponse\x12O\n\x08\x64oCommit\x12!.distributedstore.DoCommitRequest\x1a .distributedstore.CommitResponse\x12N\n\x07\x64oAbort\x12 .distributedstore.DoAbortRequest\x1a!.distributedstore.DoAbortResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -30,19 +30,25 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_GETRESPONSE']._serialized_start=140
   _globals['_GETRESPONSE']._serialized_end=183
   _globals['_SLOWDOWNREQUEST']._serialized_start=185
-  _globals['_SLOWDOWNREQUEST']._serialized_end=219
-  _globals['_SLOWDOWNRESPONSE']._serialized_start=221
-  _globals['_SLOWDOWNRESPONSE']._serialized_end=256
-  _globals['_RESTOREREQUEST']._serialized_start=258
-  _globals['_RESTOREREQUEST']._serialized_end=274
-  _globals['_RESTORERESPONSE']._serialized_start=276
-  _globals['_RESTORERESPONSE']._serialized_end=310
-  _globals['_COMMITREQUEST']._serialized_start=312
-  _globals['_COMMITREQUEST']._serialized_end=355
-  _globals['_COMMITRESPONSE']._serialized_start=357
-  _globals['_COMMITRESPONSE']._serialized_end=407
-  _globals['_EMPTY']._serialized_start=409
-  _globals['_EMPTY']._serialized_end=416
-  _globals['_KEYVALUESTORE']._serialized_start=419
-  _globals['_KEYVALUESTORE']._serialized_end=892
+  _globals['_SLOWDOWNREQUEST']._serialized_end=217
+  _globals['_SLOWDOWNRESPONSE']._serialized_start=219
+  _globals['_SLOWDOWNRESPONSE']._serialized_end=254
+  _globals['_RESTOREREQUEST']._serialized_start=256
+  _globals['_RESTOREREQUEST']._serialized_end=272
+  _globals['_RESTORERESPONSE']._serialized_start=274
+  _globals['_RESTORERESPONSE']._serialized_end=308
+  _globals['_CANCOMMITREQUEST']._serialized_start=310
+  _globals['_CANCOMMITREQUEST']._serialized_end=356
+  _globals['_DOCOMMITREQUEST']._serialized_start=358
+  _globals['_DOCOMMITREQUEST']._serialized_end=403
+  _globals['_COMMITRESPONSE']._serialized_start=405
+  _globals['_COMMITRESPONSE']._serialized_end=438
+  _globals['_DOABORTREQUEST']._serialized_start=440
+  _globals['_DOABORTREQUEST']._serialized_end=456
+  _globals['_DOABORTRESPONSE']._serialized_start=458
+  _globals['_DOABORTRESPONSE']._serialized_end=492
+  _globals['_EMPTY']._serialized_start=494
+  _globals['_EMPTY']._serialized_end=501
+  _globals['_KEYVALUESTORE']._serialized_start=504
+  _globals['_KEYVALUESTORE']._serialized_end=1062
 # @@protoc_insertion_point(module_scope)

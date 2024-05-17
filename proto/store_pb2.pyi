@@ -32,13 +32,13 @@ class GetResponse(_message.Message):
     found: bool
     def __init__(self, value: _Optional[str] = ..., found: bool = ...) -> None: ...
 
-class SlowDownRequest(_message.Message):
-    __slots__ = ("seconds",)
-    SECONDS_FIELD_NUMBER: _ClassVar[int]
-    seconds: int
-    def __init__(self, seconds: _Optional[int] = ...) -> None: ...
+class SlowdownRequest(_message.Message):
+    __slots__ = ("delay",)
+    DELAY_FIELD_NUMBER: _ClassVar[int]
+    delay: int
+    def __init__(self, delay: _Optional[int] = ...) -> None: ...
 
-class SlowDownResponse(_message.Message):
+class SlowdownResponse(_message.Message):
     __slots__ = ("success",)
     SUCCESS_FIELD_NUMBER: _ClassVar[int]
     success: bool
@@ -54,7 +54,15 @@ class RestoreResponse(_message.Message):
     success: bool
     def __init__(self, success: bool = ...) -> None: ...
 
-class CommitRequest(_message.Message):
+class CanCommitRequest(_message.Message):
+    __slots__ = ("key", "value")
+    KEY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    key: str
+    value: str
+    def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
+
+class DoCommitRequest(_message.Message):
     __slots__ = ("key", "value")
     KEY_FIELD_NUMBER: _ClassVar[int]
     VALUE_FIELD_NUMBER: _ClassVar[int]
@@ -63,12 +71,20 @@ class CommitRequest(_message.Message):
     def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
 
 class CommitResponse(_message.Message):
-    __slots__ = ("success", "message")
+    __slots__ = ("success",)
     SUCCESS_FIELD_NUMBER: _ClassVar[int]
-    MESSAGE_FIELD_NUMBER: _ClassVar[int]
     success: bool
-    message: str
-    def __init__(self, success: bool = ..., message: _Optional[str] = ...) -> None: ...
+    def __init__(self, success: bool = ...) -> None: ...
+
+class DoAbortRequest(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class DoAbortResponse(_message.Message):
+    __slots__ = ("success",)
+    SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    success: bool
+    def __init__(self, success: bool = ...) -> None: ...
 
 class Empty(_message.Message):
     __slots__ = ()

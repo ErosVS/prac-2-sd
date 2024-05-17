@@ -51,8 +51,8 @@ class KeyValueStoreStub(object):
                 _registered_method=True)
         self.slowDown = channel.unary_unary(
                 '/distributedstore.KeyValueStore/slowDown',
-                request_serializer=proto_dot_store__pb2.SlowDownRequest.SerializeToString,
-                response_deserializer=proto_dot_store__pb2.SlowDownResponse.FromString,
+                request_serializer=proto_dot_store__pb2.SlowdownRequest.SerializeToString,
+                response_deserializer=proto_dot_store__pb2.SlowdownResponse.FromString,
                 _registered_method=True)
         self.restore = channel.unary_unary(
                 '/distributedstore.KeyValueStore/restore',
@@ -61,13 +61,18 @@ class KeyValueStoreStub(object):
                 _registered_method=True)
         self.canCommit = channel.unary_unary(
                 '/distributedstore.KeyValueStore/canCommit',
-                request_serializer=proto_dot_store__pb2.CommitRequest.SerializeToString,
+                request_serializer=proto_dot_store__pb2.CanCommitRequest.SerializeToString,
                 response_deserializer=proto_dot_store__pb2.CommitResponse.FromString,
                 _registered_method=True)
         self.doCommit = channel.unary_unary(
                 '/distributedstore.KeyValueStore/doCommit',
-                request_serializer=proto_dot_store__pb2.CommitRequest.SerializeToString,
+                request_serializer=proto_dot_store__pb2.DoCommitRequest.SerializeToString,
                 response_deserializer=proto_dot_store__pb2.CommitResponse.FromString,
+                _registered_method=True)
+        self.doAbort = channel.unary_unary(
+                '/distributedstore.KeyValueStore/doAbort',
+                request_serializer=proto_dot_store__pb2.DoAbortRequest.SerializeToString,
+                response_deserializer=proto_dot_store__pb2.DoAbortResponse.FromString,
                 _registered_method=True)
 
 
@@ -110,6 +115,12 @@ class KeyValueStoreServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def doAbort(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_KeyValueStoreServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -125,8 +136,8 @@ def add_KeyValueStoreServicer_to_server(servicer, server):
             ),
             'slowDown': grpc.unary_unary_rpc_method_handler(
                     servicer.slowDown,
-                    request_deserializer=proto_dot_store__pb2.SlowDownRequest.FromString,
-                    response_serializer=proto_dot_store__pb2.SlowDownResponse.SerializeToString,
+                    request_deserializer=proto_dot_store__pb2.SlowdownRequest.FromString,
+                    response_serializer=proto_dot_store__pb2.SlowdownResponse.SerializeToString,
             ),
             'restore': grpc.unary_unary_rpc_method_handler(
                     servicer.restore,
@@ -135,13 +146,18 @@ def add_KeyValueStoreServicer_to_server(servicer, server):
             ),
             'canCommit': grpc.unary_unary_rpc_method_handler(
                     servicer.canCommit,
-                    request_deserializer=proto_dot_store__pb2.CommitRequest.FromString,
+                    request_deserializer=proto_dot_store__pb2.CanCommitRequest.FromString,
                     response_serializer=proto_dot_store__pb2.CommitResponse.SerializeToString,
             ),
             'doCommit': grpc.unary_unary_rpc_method_handler(
                     servicer.doCommit,
-                    request_deserializer=proto_dot_store__pb2.CommitRequest.FromString,
+                    request_deserializer=proto_dot_store__pb2.DoCommitRequest.FromString,
                     response_serializer=proto_dot_store__pb2.CommitResponse.SerializeToString,
+            ),
+            'doAbort': grpc.unary_unary_rpc_method_handler(
+                    servicer.doAbort,
+                    request_deserializer=proto_dot_store__pb2.DoAbortRequest.FromString,
+                    response_serializer=proto_dot_store__pb2.DoAbortResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -222,8 +238,8 @@ class KeyValueStore(object):
             request,
             target,
             '/distributedstore.KeyValueStore/slowDown',
-            proto_dot_store__pb2.SlowDownRequest.SerializeToString,
-            proto_dot_store__pb2.SlowDownResponse.FromString,
+            proto_dot_store__pb2.SlowdownRequest.SerializeToString,
+            proto_dot_store__pb2.SlowdownResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -276,7 +292,7 @@ class KeyValueStore(object):
             request,
             target,
             '/distributedstore.KeyValueStore/canCommit',
-            proto_dot_store__pb2.CommitRequest.SerializeToString,
+            proto_dot_store__pb2.CanCommitRequest.SerializeToString,
             proto_dot_store__pb2.CommitResponse.FromString,
             options,
             channel_credentials,
@@ -303,8 +319,35 @@ class KeyValueStore(object):
             request,
             target,
             '/distributedstore.KeyValueStore/doCommit',
-            proto_dot_store__pb2.CommitRequest.SerializeToString,
+            proto_dot_store__pb2.DoCommitRequest.SerializeToString,
             proto_dot_store__pb2.CommitResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def doAbort(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/distributedstore.KeyValueStore/doAbort',
+            proto_dot_store__pb2.DoAbortRequest.SerializeToString,
+            proto_dot_store__pb2.DoAbortResponse.FromString,
             options,
             channel_credentials,
             insecure,

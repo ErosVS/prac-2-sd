@@ -12,7 +12,8 @@ from threading import Thread
 import yaml
 import logging
 import concurrent.futures
-import store_pb2, store_pb2_grpc
+from proto import store_pb2
+from proto import store_pb2_grpc
 from tabulate import tabulate
 
 
