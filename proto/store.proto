@@ -7,7 +7,7 @@ service KeyValueStore {
 
   rpc get(GetRequest) returns (GetResponse);
 
-  rpc slowDown(SlowdownRequest) returns (SlowdownResponse);
+  rpc slowDown(SlowDownRequest) returns (SlowDownResponse);
 
   rpc restore(RestoreRequest) returns (RestoreResponse);
 
@@ -37,11 +37,11 @@ message GetResponse {
   bool found = 2;
 }
 
-message SlowdownRequest {
-  int32 delay = 1;
+message SlowDownRequest {
+  int32 seconds = 1;
 }
 
-message SlowdownResponse {
+message SlowDownResponse {
   bool success = 1;
 }
 

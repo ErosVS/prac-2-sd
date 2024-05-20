@@ -14,7 +14,7 @@ from proto import store_pb2_grpc
 class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
     def __init__(self, config_file):
         self.data = {}
-        self.delay = 0
+        self.seconds = 0
         with open(config_file, 'r') as f:
             config = yaml.safe_load(f)
         self.ip = config['master']['ip']
@@ -44,7 +44,7 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
 
     def put(self, request, context):
         key, value = request.key, request.value
-        time.sleep(self.delay)
+        time.sleep(self.seconds)
 
         # Phase 1: Prepare phase
         can_commit_request = store_pb2.CanCommitRequest(key=key, value=value)
@@ -57,7 +57,7 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
             return store_pb2.CommitResponse(success=False)
 
         # Phase 2: Commit phase
-        print("Start Commit")
+        # print("Start Commit")
         do_commit_request = store_pb2.DoCommitRequest(key=key, value=value)
         do_commit_responses = self._send_to_all_slaves('doCommit', do_commit_request)
         if all(response.success for response in do_commit_responses):
@@ -73,16 +73,16 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
 
     def get(self, request, context):
         key = request.key
-        time.sleep(self.delay)
+        time.sleep(self.seconds)
         value = self.data.get(key)
         return store_pb2.GetResponse(value=value, found=True)
 
     def slowDown(self, request, context):
-        self.delay = request.delay
-        return store_pb2.SlowdownResponse(success=True)
+        self.seconds = request.seconds
+        return store_pb2.SlowDownResponse(success=True)
 
     def restore(self, request, context):
-        self.delay = 0
+        self.seconds = 0
         return store_pb2.RestoreResponse(success=True)
 
 

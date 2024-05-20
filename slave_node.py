@@ -18,7 +18,7 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
         self.slave_id = slave_id
         self.ip = ''
         self.port = ''
-        self.delay = 0
+        self.seconds = 0
         self.mutex = threading.Lock()
         self.load_config(config_file)
         self.load_data()
@@ -45,18 +45,18 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
             json.dump(self.data, f)
 
     def canCommit(self, request, context):
-        print("CanCommit")
+        # print("CanCommit")
         # Prepare phase: Store the data temporarily
         self.temp_data[request.key] = request.value
         return store_pb2.CommitResponse(success=True)
 
     def doCommit(self, request, context):
-        print("doCommit")
+        # print("doCommit")
         # Commit phase: Move the data from temporary to permanent storage
         self.data.update(self.temp_data)
         self.temp_data = {}
         self.save_data()
-        print(self.data)
+        # print(self.data)
         return store_pb2.CommitResponse(success=True)
 
     def abort(self, request, context):
@@ -66,17 +66,17 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
         return store_pb2.DoAbortResponse(success=True)
 
     def get(self, request, context):
-        time.sleep(self.delay)
+        time.sleep(self.seconds)
         key = request.key
         value = self.data.get(key)
         return store_pb2.GetResponse(value=value, found=True)
 
     def slowDown(self, request, context):
-        self.delay = request.delay
-        return store_pb2.SlowdownResponse(success=True)
+        self.seconds = request.seconds
+        return store_pb2.SlowDownResponse(success=True)
 
     def restore(self, request, context):
-        self.delay = 0
+        self.seconds = 0
         return store_pb2.RestoreResponse(success=True)
 
 
