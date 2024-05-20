@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
 
 import grpc
@@ -15,6 +16,7 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
     def __init__(self, config_file):
         self.data = {}
         self.seconds = 0
+        self.lock = threading.Lock()
         with open(config_file, 'r') as f:
             config = yaml.safe_load(f)
         self.ip = config['master']['ip']
@@ -22,15 +24,20 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
         self.slaves = config['slaves']
         self.load_data()
 
-    def _send_to_all_slaves(self, method, request):
+    def _send_to_all_slaves(self, method, request, timeout=30):
         responses = []
         for slave in self.slaves:
             with grpc.insecure_channel(f'localhost:{slave["port"]}') as channel:
                 stub = store_pb2_grpc.KeyValueStoreStub(channel)
-                response = getattr(stub, method)(request)
-                responses.append(response)
+                try:
+                    response = getattr(stub, method)(request, timeout=timeout)
+                    responses.append(response)
+                except grpc.RpcError as e:
+                    print(f"Timeout! Error contacting participant: {e}")
+                    responses.append(None)
         return responses
 
+    # Load data from database 'master_data.json'
     def load_data(self):
         try:
             with open(f'db/master_data.json', 'r') as f:
@@ -38,37 +45,48 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
         except FileNotFoundError:
             self.data = {}
 
+    # Save data to database 'master_data.json'
     def save_data(self):
         with open(f'db/master_data.json', 'w') as f:
             json.dump(self.data, f)
 
     def put(self, request, context):
-        key, value = request.key, request.value
         time.sleep(self.seconds)
+        key, value = request.key, request.value
 
-        # Phase 1: Prepare phase
+        # Phase 1: Voting phase
+        # CanCommit
+        # TODO: Master can commit? if not, return CommitResponse False
         can_commit_request = store_pb2.CanCommitRequest(key=key, value=value)
         can_commit_response = self._send_to_all_slaves('canCommit', can_commit_request)
-        # Case: Abort
-        if not all(response.success for response in can_commit_response):
-            print("Aborting in master after canCommit")
-            abort_request = store_pb2.DoAbortRequest()
-            self._send_to_all_slaves('doAbort', abort_request)
+
+        # If there are failures or any vote is False
+        if any(response is None or not response.vote for response in can_commit_response):
+            print("canCommit failed. Coordinator voted NO.")
+            self._send_to_all_slaves('canCommitFailed', store_pb2.DoAbortRequest(key=key, value=value))
             return store_pb2.CommitResponse(success=False)
 
         # Phase 2: Commit phase
-        # print("Start Commit")
+        # DoCommit
         do_commit_request = store_pb2.DoCommitRequest(key=key, value=value)
         do_commit_responses = self._send_to_all_slaves('doCommit', do_commit_request)
+        # DoCommit OK
         if all(response.success for response in do_commit_responses):
             # Store value in master
+            self.lock.acquire()
             self.data[key] = value
             self.save_data()
+            self.lock.release()
             return store_pb2.CommitResponse(success=True)
         else:
-            print("Aborting in master after doCommit")
-            abort_request = store_pb2.DoAbortRequest()
-            self._send_to_all_slaves('abort', abort_request)
+            print("DoCommit failed. Rolling back...")
+            do_abort_response = False
+            # Force rollback
+            while not do_abort_response:
+                do_abort_responses = self._send_to_all_slaves('doCommitFailed',
+                                                              store_pb2.DoAbortRequest(key=key, value=value))
+                if any(response is None or not response.success for response in do_abort_responses):
+                    do_abort_response = True
             return store_pb2.CommitResponse(success=False)
 
     def get(self, request, context):

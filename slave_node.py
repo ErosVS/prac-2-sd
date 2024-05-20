@@ -19,7 +19,7 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
         self.ip = ''
         self.port = ''
         self.seconds = 0
-        self.mutex = threading.Lock()
+        self.lock = threading.Lock()
         self.load_config(config_file)
         self.load_data()
 
@@ -45,19 +45,40 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
             json.dump(self.data, f)
 
     def canCommit(self, request, context):
-        # print("CanCommit")
-        # Prepare phase: Store the data temporarily
+        # Vote YES and save to local storage the initial value
         self.temp_data[request.key] = request.value
-        return store_pb2.CommitResponse(success=True)
+        return store_pb2.CanCommitResponse(vote=True)
+
+    def canCommitFailed(self, request, context):
+        # Delete temporary data
+        self.temp_data = {}
+        return store_pb2.DoAbortResponse(success=True)
 
     def doCommit(self, request, context):
-        # print("doCommit")
-        # Commit phase: Move the data from temporary to permanent storage
-        self.data.update(self.temp_data)
-        self.temp_data = {}
-        self.save_data()
-        # print(self.data)
-        return store_pb2.CommitResponse(success=True)
+        # If data was previously saved in temporary storage
+        if request.value == self.temp_data.get(request.key):
+            # Move the data from temporary to permanent storage
+
+            self.lock.acquire()
+            self.data.update(self.temp_data)
+            self.save_data()
+            self.lock.release()
+
+            # Restore temp data to None
+            self.temp_data = {}
+            return store_pb2.CommitResponse(success=True)
+        else:
+            return store_pb2.CommitResponse(success=False)
+
+    def doCommitFailed(self, request, context):
+        # Delete temporary data
+        if self.data.get(request.key) is not None:
+            self.lock.acquire()
+            del self.data[request.key]
+            self.save_data()
+            self.lock.release()
+            return store_pb2.DoAbortResponse(success=True)
+        return store_pb2.Empty()
 
     def abort(self, request, context):
         print("doAbort")
