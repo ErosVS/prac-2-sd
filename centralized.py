@@ -11,8 +11,8 @@ from slave_node import SlaveNode
 
 
 class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
-    def __init__(self, config_file, lock):
-        self.data = {}
+    def __init__(self, config_file, lock, data):
+        self.data = data    # Load data from database
         self.seconds = 0
         self.lock = lock
         with open(config_file, 'r') as f:
@@ -20,7 +20,6 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
         self.ip = config['master']['ip']
         self.port = config['master']['port']
         self.slaves = config['slaves']
-        self.load_data()
 
     def _send_to_all_slaves(self, method, request, timeout=30):
         responses = []
@@ -34,14 +33,6 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
                     print(f"Timeout! Error contacting participant: {e}")
                     responses.append(None)
         return responses
-
-    # Load data from database 'master_data.json'
-    def load_data(self):
-        try:
-            with open(f'db/master_data.json', 'r') as f:
-                self.data = json.load(f)
-        except FileNotFoundError:
-            self.data = {}
 
     # Save data to database 'master_data.json'
     def save_data(self):
@@ -68,6 +59,7 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
         # DoCommit
         do_commit_request = store_pb2.DoCommitRequest(key=key, value=value)
         do_commit_responses = self._send_to_all_slaves('doCommit', do_commit_request)
+
         # DoCommit OK
         if all(response is not None and response.success for response in do_commit_responses):
             # Store value in master
@@ -77,6 +69,7 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
             return store_pb2.CommitResponse(success=True)
         else:
             # print("DoCommit failed. Rolling back...")
+            print(do_commit_responses)
             do_abort_response = False
             # Force rollback
             while not do_abort_response:
@@ -105,6 +98,15 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
         return store_pb2.RestoreResponse(success=True)
 
 
+# Load data from database
+def load_data(node_id):
+    try:
+        with open(f'db/{node_id}_data.json', 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+
 def start_slave_nodes(lock):
     slave1_thread = threading.Thread(target=serve_slave, args=('slave_1', lock))
     slave2_thread = threading.Thread(target=serve_slave, args=('slave_2', lock))
@@ -117,8 +119,9 @@ def start_slave_nodes(lock):
 
 
 def serve_slave(slave_id, lock):
-    slave_node = SlaveNode('centralized_config.yaml', slave_id, lock)
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
+    slave_data = load_data(slave_id)
+    slave_node = SlaveNode('centralized_config.yaml', slave_id, lock, slave_data)
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     store_pb2_grpc.add_KeyValueStoreServicer_to_server(slave_node, server)
     server.add_insecure_port(f"{slave_node.ip}:{slave_node.port}")
     server.start()
@@ -128,11 +131,16 @@ def serve_slave(slave_id, lock):
 def serve():
     config_file = 'centralized_config.yaml'
     lock = threading.Lock()
-    master_node = MasterNode(config_file, lock)
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
+    master_id = 'master'
+    data = load_data(master_id)
+    master_node = MasterNode(config_file, lock, data)
+
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     store_pb2_grpc.add_KeyValueStoreServicer_to_server(master_node, server)
+
     server.add_insecure_port(f"{master_node.ip}:{master_node.port}")
     server.start()
+
     start_slave_nodes(lock)
     server.wait_for_termination()
 

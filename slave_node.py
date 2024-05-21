@@ -8,9 +8,9 @@ import yaml
 
 
 class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
-    def __init__(self, config_file, slave_id, lock):
+    def __init__(self, config_file, slave_id, lock, slave_data):
         self.stub = store_pb2_grpc.KeyValueStoreStub(grpc.insecure_channel(f"127.0.0.1:32770"))
-        self.data = {}
+        self.data = slave_data    # Load data from database
         self.temp_data = {}
         self.slave_id = slave_id
         self.ip = ''
@@ -18,7 +18,6 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
         self.seconds = 0
         self.lock = lock
         self.load_config(config_file)
-        self.load_data()
 
     def load_config(self, config_file):
         with open(config_file, 'r') as f:
@@ -29,13 +28,6 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
                 self.port = slave_config['port']
             else:
                 raise ValueError(f"No configuration found for slave ID: {self.slave_id}")
-
-    def load_data(self):
-        try:
-            with open(f'db/{self.slave_id}_data.json', 'r') as f:
-                self.data = json.load(f)
-        except FileNotFoundError:
-            self.data = {}
 
     def save_data(self):
         with open(f'db/{self.slave_id}_data.json', 'w') as f:
@@ -52,18 +44,20 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
         return store_pb2.DoAbortResponse(success=True)
 
     def doCommit(self, request, context):
-        # If data was previously saved in temporary storage
-        if request.value in self.temp_data.values():
-            # Move the data from temporary to permanent storage
-            with self.lock:
-                self.data.update(self.temp_data)
-                self.save_data()
 
-            # Restore temp data to None
-            self.temp_data = {}
-            return store_pb2.CommitResponse(success=True)
-        else:
-            return store_pb2.CommitResponse(success=False)
+        # If data was previously saved in temporary storage
+            if request.value in self.temp_data.values():
+                # Move the data from temporary to permanent storage
+                with self.lock:
+                    self.data.update(self.temp_data)
+                    self.save_data()
+
+                # Restore temp data to None
+                self.temp_data = {}
+
+                return store_pb2.CommitResponse(success=True)
+            else:
+                return store_pb2.CommitResponse(success=False)
 
     def doCommitFailed(self, request, context):
         # Delete temporary data
