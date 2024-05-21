@@ -1,7 +1,4 @@
 import json
-import os
-import subprocess
-import sys
 import threading
 import time
 
@@ -10,13 +7,14 @@ from concurrent import futures
 import yaml
 from proto import store_pb2
 from proto import store_pb2_grpc
+from slave_node import SlaveNode
 
 
 class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
-    def __init__(self, config_file):
+    def __init__(self, config_file, lock):
         self.data = {}
         self.seconds = 0
-        self.lock = threading.Lock()
+        self.lock = lock
         with open(config_file, 'r') as f:
             config = yaml.safe_load(f)
         self.ip = config['master']['ip']
@@ -71,15 +69,14 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
         do_commit_request = store_pb2.DoCommitRequest(key=key, value=value)
         do_commit_responses = self._send_to_all_slaves('doCommit', do_commit_request)
         # DoCommit OK
-        if all(response.success for response in do_commit_responses):
+        if all(response is not None and response.success for response in do_commit_responses):
             # Store value in master
-            self.lock.acquire()
-            self.data[key] = value
-            self.save_data()
-            self.lock.release()
+            with self.lock:
+                self.data[key] = value
+                self.save_data()
             return store_pb2.CommitResponse(success=True)
         else:
-            print("DoCommit failed. Rolling back...")
+            # print("DoCommit failed. Rolling back...")
             do_abort_response = False
             # Force rollback
             while not do_abort_response:
@@ -92,8 +89,12 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
     def get(self, request, context):
         key = request.key
         time.sleep(self.seconds)
-        value = self.data.get(key)
-        return store_pb2.GetResponse(value=value, found=True)
+        found = False
+        with self.lock:
+            value = self.data.get(key)
+            if value is None:
+                found = True
+        return store_pb2.GetResponse(value=value, found=found)
 
     def slowDown(self, request, context):
         self.seconds = request.seconds
@@ -104,22 +105,37 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
         return store_pb2.RestoreResponse(success=True)
 
 
-def start_slave_nodes():
-    server_script_path = './slave_node.py'
-    subprocess.Popen([sys.executable, server_script_path, 'slave_1'])
-    subprocess.Popen([sys.executable, server_script_path, 'slave_2'])
+def start_slave_nodes(lock):
+    slave1_thread = threading.Thread(target=serve_slave, args=('slave_1', lock))
+    slave2_thread = threading.Thread(target=serve_slave, args=('slave_2', lock))
+
+    slave1_thread.start()
+    slave2_thread.start()
+
+    slave1_thread.join()
+    slave2_thread.join()
 
 
-def serve():
-    config_file = 'centralized_config.yaml'
-    master_node = MasterNode(config_file)
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    store_pb2_grpc.add_KeyValueStoreServicer_to_server(master_node, server)
-    server.add_insecure_port(f"{master_node.ip}:{master_node.port}")
+def serve_slave(slave_id, lock):
+    slave_node = SlaveNode('centralized_config.yaml', slave_id, lock)
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
+    store_pb2_grpc.add_KeyValueStoreServicer_to_server(slave_node, server)
+    server.add_insecure_port(f"{slave_node.ip}:{slave_node.port}")
     server.start()
     server.wait_for_termination()
 
 
+def serve():
+    config_file = 'centralized_config.yaml'
+    lock = threading.Lock()
+    master_node = MasterNode(config_file, lock)
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
+    store_pb2_grpc.add_KeyValueStoreServicer_to_server(master_node, server)
+    server.add_insecure_port(f"{master_node.ip}:{master_node.port}")
+    server.start()
+    start_slave_nodes(lock)
+    server.wait_for_termination()
+
+
 if __name__ == '__main__':
-    start_slave_nodes()
     serve()

@@ -1,17 +1,14 @@
 import json
-import sys
-import threading
 import time
 
 import grpc
-from concurrent import futures
 from proto import store_pb2
 from proto import store_pb2_grpc
 import yaml
 
 
 class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
-    def __init__(self, config_file, slave_id):
+    def __init__(self, config_file, slave_id, lock):
         self.stub = store_pb2_grpc.KeyValueStoreStub(grpc.insecure_channel(f"127.0.0.1:32770"))
         self.data = {}
         self.temp_data = {}
@@ -19,7 +16,7 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
         self.ip = ''
         self.port = ''
         self.seconds = 0
-        self.lock = threading.Lock()
+        self.lock = lock
         self.load_config(config_file)
         self.load_data()
 
@@ -35,13 +32,13 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
 
     def load_data(self):
         try:
-            with open(f'db/{slave_id}_data.json', 'r') as f:
+            with open(f'db/{self.slave_id}_data.json', 'r') as f:
                 self.data = json.load(f)
         except FileNotFoundError:
             self.data = {}
 
     def save_data(self):
-        with open(f'db/{slave_id}_data.json', 'w') as f:
+        with open(f'db/{self.slave_id}_data.json', 'w') as f:
             json.dump(self.data, f)
 
     def canCommit(self, request, context):
@@ -56,13 +53,11 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
 
     def doCommit(self, request, context):
         # If data was previously saved in temporary storage
-        if request.value == self.temp_data.get(request.key):
+        if request.value in self.temp_data.values():
             # Move the data from temporary to permanent storage
-
-            self.lock.acquire()
-            self.data.update(self.temp_data)
-            self.save_data()
-            self.lock.release()
+            with self.lock:
+                self.data.update(self.temp_data)
+                self.save_data()
 
             # Restore temp data to None
             self.temp_data = {}
@@ -73,10 +68,9 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
     def doCommitFailed(self, request, context):
         # Delete temporary data
         if self.data.get(request.key) is not None:
-            self.lock.acquire()
-            del self.data[request.key]
-            self.save_data()
-            self.lock.release()
+            with self.lock:
+                del self.data[request.key]
+                self.save_data()
             return store_pb2.DoAbortResponse(success=True)
         return store_pb2.Empty()
 
@@ -89,8 +83,12 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
     def get(self, request, context):
         time.sleep(self.seconds)
         key = request.key
-        value = self.data.get(key)
-        return store_pb2.GetResponse(value=value, found=True)
+        found = False
+        with self.lock:
+            value = self.data.get(key)
+            if value is None:
+                found = True
+        return store_pb2.GetResponse(value=value, found=found)
 
     def slowDown(self, request, context):
         self.seconds = request.seconds
@@ -99,19 +97,3 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
     def restore(self, request, context):
         self.seconds = 0
         return store_pb2.RestoreResponse(success=True)
-
-
-def serve(slave_id):
-    slave_node = SlaveNode('centralized_config.yaml', slave_id)
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    store_pb2_grpc.add_KeyValueStoreServicer_to_server(slave_node, server)
-    server.add_insecure_port(f"{slave_node.ip}:{slave_node.port}")
-    server.start()
-    server.wait_for_termination()
-
-
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        raise Exception("Usage: python slave_nodev2.py <slave_id>")
-    slave_id = sys.argv[1]
-    serve(slave_id)
