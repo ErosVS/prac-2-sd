@@ -96,7 +96,7 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
             return store_pb2.CommitResponse(success=False)
 
         key, value = request.key, request.value
-        # time.sleep(self.seconds)
+        time.sleep(self.seconds)
         with self.lock:
 
             # Phase 1: Voting phase
