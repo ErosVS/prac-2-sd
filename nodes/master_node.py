@@ -85,6 +85,7 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
         responses = []
         for stub in self.stubs:
             method = getattr(stub, method_name)
+            # with self.lock:
             response = method(request)
             responses.append(response)
         return responses
@@ -96,35 +97,36 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
 
         key, value = request.key, request.value
         # time.sleep(self.seconds)
+        with self.lock:
 
-        # Phase 1: Voting phase
-        # CanCommit
-        can_commit_request = store_pb2.CanCommitRequest(key=key, value=value)
-        can_commit_responses = self.send_request_to_slaves(can_commit_request, 'canCommit')
+            # Phase 1: Voting phase
+            # CanCommit
+            can_commit_request = store_pb2.CanCommitRequest(key=key, value=value)
+            can_commit_responses = self.send_request_to_slaves(can_commit_request, 'canCommit')
 
-        if any(response is None or not response.vote for response in can_commit_responses):
-            print("canCommit failed. Coordinator voted NO.")
-            if can_commit_responses[0].value == can_commit_responses[1].value:
-                do_abort_request = store_pb2.DoAbortRequest(name='canCommit', key=key,
-                                                            value=can_commit_responses[0].value)
-                self.send_request_to_slaves(do_abort_request, 'doAbort')
-            else:
-                self.logger.error("CAN COMMIT VALUES DIFFER")
-                self.logger.info(can_commit_responses)
+            if any(response is None or not response.vote for response in can_commit_responses):
+                print("canCommit failed. Coordinator voted NO.")
+                if can_commit_responses[0].value == can_commit_responses[1].value:
+                    do_abort_request = store_pb2.DoAbortRequest(key=key,
+                                                                value=can_commit_responses[0].value)
+                    self.send_request_to_slaves(do_abort_request, 'doAbort')
+                else:
+                    self.logger.error("CAN COMMIT VALUES DIFFER")
+                    self.logger.info(can_commit_responses)
 
-            return store_pb2.CommitResponse(success=False)
+                return store_pb2.CommitResponse(success=False)
 
-        # Phase 2: Commit phase
-        # DoCommit
-        do_commit_request = store_pb2.DoCommitRequest(key=key, value=value)
-        do_commit_responses = self.send_request_to_slaves(do_commit_request, 'doCommit')
+            # Phase 2: Commit phase
+            # DoCommit
+            do_commit_request = store_pb2.DoCommitRequest(key=key, value=value)
+            do_commit_responses = self.send_request_to_slaves(do_commit_request, 'doCommit')
 
-        # DoCommit OK
-        if all(response is not None and response.success for response in do_commit_responses):
-            # Store value in master
-            with self.lock:
+            # DoCommit OK
+            if all(response is not None and response.success for response in do_commit_responses):
+                # Store value in master
+                # with self.lock:
                 self.data[key] = value
                 self.save_data()
-            return store_pb2.CommitResponse(success=True)
-        else:
-            return store_pb2.CommitResponse(success=False)
+                return store_pb2.CommitResponse(success=True)
+            else:
+                return store_pb2.CommitResponse(success=False)

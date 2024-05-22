@@ -68,26 +68,17 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
         # If data was previously saved in temporary storage
         if request.value in self.temp_data.values():
             # Move the data from temporary to permanent storage
-            with self.lock:
-                self.data[request.key] = request.value
-                self.save_data()
-                # Restore temp data to None
-                self.temp_data = {}
+            # with self.lock:
+            self.data[request.key] = request.value
+            self.save_data()
+            # Restore temp data to None
+            self.temp_data = {}
+
             return store_pb2.CommitResponse(success=True, value=self.data[request.key])
         else:
             return store_pb2.CommitResponse(success=False, value=self.data[request.key])
 
     def doAbort(self, request, context):
-        if request.name == 'canCommit':
-            # Delete temporary data
-            self.temp_data = {}
-            return store_pb2.DoAbortResponse(success=True)
-        elif request.name == 'doCommit':
-
-            # Delete temporary data
-            if self.data.get(request.key) is not None:
-                with self.lock:
-                    # self.data[request.key] = request.value
-                    self.save_data()
-                return store_pb2.DoAbortResponse(success=True)
-            return store_pb2.Empty()
+        # Delete temporary data
+        self.temp_data = {}
+        return store_pb2.DoAbortResponse(success=True)

@@ -61,7 +61,7 @@ if __name__ == '__main__':
     for server in slave_servers:
         try:
             server.start()
-            time.sleep(2)
+            time.sleep(1)
         except Exception as e:
             print(f"Error starting server: {e}")
 

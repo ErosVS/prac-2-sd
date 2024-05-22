@@ -3,7 +3,7 @@ syntax = "proto3";
 package distributedstore;
 
 service KeyValueStore {
-
+  //  Default methods
   rpc put(PutRequest) returns (PutResponse);
 
   rpc get(GetRequest) returns (GetResponse);
@@ -12,13 +12,10 @@ service KeyValueStore {
 
   rpc restore(RestoreRequest) returns (RestoreResponse);
 
+  //  New API methods
   rpc canCommit(CanCommitRequest) returns (CanCommitResponse);
 
-  rpc canCommitFailed(DoAbortRequest) returns (DoAbortResponse);
-
   rpc doCommit(DoCommitRequest) returns (CommitResponse);
-
-  rpc doCommitFailed(DoAbortRequest) returns (DoAbortResponse);
 
   rpc doAbort(DoAbortRequest) returns (DoAbortResponse);
 
@@ -77,15 +74,12 @@ message CommitResponse {
 }
 
 message DoAbortRequest {
-  string name = 1;
-  string key = 2;
-  string value = 3;
+  string key = 1;
+  string value = 2;
 }
 
 message DoAbortResponse {
   bool success = 1;
 }
 
-message Empty {
-
-}
+message Empty { }
