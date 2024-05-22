@@ -63,6 +63,7 @@ message CanCommitRequest {
 
 message CanCommitResponse {
   bool vote = 1;
+  string previous_value = 2;
 }
 
 message DoCommitRequest {
@@ -72,11 +73,13 @@ message DoCommitRequest {
 
 message CommitResponse {
   bool success = 1;
+  string value = 2;
 }
 
 message DoAbortRequest {
-  string key = 1;
-  string value = 2;
+  string name = 1;
+  string key = 2;
+  string value = 3;
 }
 
 message DoAbortResponse {

@@ -22,6 +22,23 @@ def kill_processes(pids):
             print(f"No se pudo terminar el proceso con PID {pid}: {e}")
 
 
+def remove_files():
+    """Elimina los archivos de datos del master y los esclavos."""
+    files_to_remove = [
+        'db/master_data.json',
+        'db/slave_1_data.json',
+        'db/slave_2_data.json'
+    ]
+
+    for file_path in files_to_remove:
+        try:
+            os.remove(file_path)
+            print(f"Archivo {file_path} eliminado.")
+        except FileNotFoundError:
+            print(f"Archivo {file_path} no encontrado.")
+        except OSError as e:
+            print(f"No se pudo eliminar el archivo {file_path}: {e}")
+
 def main():
     ports = [32770, 32771, 32772]
     for port in ports:
@@ -32,6 +49,7 @@ def main():
         else:
             print(f"No se encontraron procesos en el puerto :{port}")
 
+    remove_files()
 
 if __name__ == "__main__":
     main()

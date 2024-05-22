@@ -12,7 +12,6 @@ put_request = store_pb2.PutRequest(
     value="hola"
 )
 put_response = stub.put(put_request)
-time.sleep(1)
 print(put_response.success)
 
 # GetRequest Test

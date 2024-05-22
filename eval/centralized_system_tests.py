@@ -277,7 +277,7 @@ class TestCentralizedSystem(unittest.TestCase):
         end_time = time.time()
         duration = end_time - start_time
         print(
-            f"Performed {sum([f.result() for f in futures])} operations in {duration:.2f} seconds (slowing down master).")
+            f"Performed {sum([f.result() for f in futures])} operations in {duration:.2f} seconds (slowing down slave).")
 
         # Restore
         self.channels_get, self.stubs_slaves = self.connect_to_grpc_servers(self.config['slaves'])
