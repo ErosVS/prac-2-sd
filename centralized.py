@@ -24,7 +24,7 @@ def load_config():
 
 def load_data(node_id):
     try:
-        with open(f'db/{node_id}_data.json', 'r') as f:
+        with open(f'db/centralized/{node_id}_data.json', 'r') as f:
             return json.load(f)
     except FileNotFoundError:
         return {}

@@ -12,12 +12,15 @@ service KeyValueStore {
 
   rpc restore(RestoreRequest) returns (RestoreResponse);
 
-  //  New API methods
+  // API methods
   rpc canCommit(CanCommitRequest) returns (CanCommitResponse);
 
   rpc doCommit(DoCommitRequest) returns (CommitResponse);
 
   rpc doAbort(DoAbortRequest) returns (DoAbortResponse);
+
+  // Decentralized.py
+  rpc vote(VoteRequest) returns (VoteResponse);
 
 }
 
@@ -80,6 +83,16 @@ message DoAbortRequest {
 
 message DoAbortResponse {
   bool success = 1;
+}
+
+// Decentralized requests
+message VoteRequest {
+  string key = 1;
+  string value = 2;
+}
+
+message VoteResponse {
+  int32 weight = 1;
 }
 
 message Empty { }

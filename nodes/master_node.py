@@ -57,7 +57,7 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
 
     # Save data to database 'master_data.json'
     def save_data(self):
-        with open(f'db/master_data.json', 'w') as f:
+        with open(f'db/centralized/master_data.json', 'w') as f:
             json.dump(self.data, f)
         # Slowdown Master
 

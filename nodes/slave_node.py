@@ -29,7 +29,7 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
 
     # Save data to database 'node_id_data.json'
     def save_data(self):
-        with open(f'db/{self.slave_id}_data.json', 'w') as f:
+        with open(f'db/centralized/{self.slave_id}_data.json', 'w') as f:
             json.dump(self.data, f)
 
     def slowDown(self, request, context):
