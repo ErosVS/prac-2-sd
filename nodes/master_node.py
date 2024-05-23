@@ -1,7 +1,6 @@
 import json
 import logging
 import time
-
 import grpc
 
 from proto import store_pb2
@@ -72,7 +71,7 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
         return store_pb2.RestoreResponse(success=True)
 
     def get(self, request, context):
-        # time.sleep(self.seconds)
+        time.sleep(self.seconds)
         key = request.key
         found = False
         with self.lock:

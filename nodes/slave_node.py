@@ -1,15 +1,12 @@
 import json
 import logging
-import os
 import time
-
-import yaml
 
 from proto import store_pb2_grpc, store_pb2
 
 
 class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
-    def __init__(self, lock, data, slave_id):
+    def __init__(self, lock, data, temp_data, slave_id):
         self.lock = lock  # Mutex
         self.data = data  # Load data from database
         self.slave_id = slave_id
@@ -17,7 +14,7 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
 
         # Internal params
         self.logger = self.setup_logger()
-        self.temp_data = {}
+        self.temp_data = temp_data
 
     def setup_logger(self):
         # Configure and return a logger
@@ -46,7 +43,7 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
         return store_pb2.RestoreResponse(success=True)
 
     def get(self, request, context):
-        # time.sleep(self.seconds)
+        time.sleep(self.seconds)
         key = request.key
         found = False
         with self.lock:
@@ -56,7 +53,6 @@ class SlaveNode(store_pb2_grpc.KeyValueStoreServicer):
         return store_pb2.GetResponse(value=value, found=found)
 
     def canCommit(self, request, context):
-        # time.sleep(self.seconds)
         # Vote YES and save to local storage the initial value
         self.temp_data[request.key] = request.value
         previous_value = None

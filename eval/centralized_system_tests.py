@@ -14,7 +14,6 @@ import yaml
 import logging
 import random
 import concurrent.futures
-# import store_pb2, store_pb2_grpc
 from proto import store_pb2
 from proto import store_pb2_grpc
 from tabulate import tabulate
@@ -286,7 +285,7 @@ class TestCentralizedSystem(unittest.TestCase):
         restore_resp = stub_slave.restore(restore_request)
         assert restore_resp.success, "Failed to restore slave."
 
-        assert duration < 10, "The system took too long to perform the operations."
+        assert duration < 60, "The system took too long to perform the operations."
 
     def test_system_scalability_and_performance_with_slowdown_master(self):
 
@@ -334,7 +333,7 @@ class TestCentralizedSystem(unittest.TestCase):
         restore_resp = self.stub_put.restore(restore_request)
         assert restore_resp.success, "Failed to restore master."
 
-        assert duration < 10, "The system took too long to perform the operations."
+        assert duration < 60, "The system took too long to perform the operations."
 
     def test_state_recovery_after_critical_failure(self):
         """Test the system's ability to recover state after a critical failure."""

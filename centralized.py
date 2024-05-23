@@ -42,11 +42,12 @@ if __name__ == '__main__':
         exit(1)
 
     # Set Up Slaves
+    slave_temp_data = {}
     slave_servers = []
     for slave_config in config['slaves']:
         try:
             slave_data = load_data(slave_config['id'])
-            slave_node = SlaveNode(lock, slave_data, slave_config['id'])
+            slave_node = SlaveNode(lock, slave_data, slave_temp_data, slave_config['id'])
 
             # Start slave servers
             slave_server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
