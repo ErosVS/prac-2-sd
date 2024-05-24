@@ -1,5 +1,6 @@
 import json
 import os
+import threading
 import time
 from concurrent import futures
 
@@ -39,14 +40,16 @@ if __name__ == '__main__':
         print(f"Error loading configuration: {e}")
         exit(1)
 
+
     peers = []
     servers = []
     for node in config['nodes']:
+        lock = threading.Lock()  # Mutex for all nodes
         node_id = node['id']
         node_weight = node['weight']
         peer = f"{node['ip']}:{node['port']}"
         data = load_data(node_id)
-        quorum_node = QuorumServer(node_id, node_weight, data, peer, peers)
+        quorum_node = QuorumServer(node_id, node_weight, data, peer, peers, lock)
 
         # Config servers and servicers
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

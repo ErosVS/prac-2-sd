@@ -5,7 +5,7 @@ import warnings
 
 from proto import store_pb2 as proto_dot_store__pb2
 
-GRPC_GENERATED_VERSION = '1.64.0'
+GRPC_GENERATED_VERSION = '1.63.0'
 GRPC_VERSION = grpc.__version__
 EXPECTED_ERROR_RELEASE = '1.65.0'
 SCHEDULED_RELEASE_DATE = 'June 25, 2024'
@@ -74,6 +74,11 @@ class KeyValueStoreStub(object):
                 request_serializer=proto_dot_store__pb2.DoAbortRequest.SerializeToString,
                 response_deserializer=proto_dot_store__pb2.DoAbortResponse.FromString,
                 _registered_method=True)
+        self.vote = channel.unary_unary(
+                '/distributedstore.KeyValueStore/vote',
+                request_serializer=proto_dot_store__pb2.VoteRequest.SerializeToString,
+                response_deserializer=proto_dot_store__pb2.VoteResponse.FromString,
+                _registered_method=True)
 
 
 class KeyValueStoreServicer(object):
@@ -105,7 +110,7 @@ class KeyValueStoreServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def canCommit(self, request, context):
-        """New API methods
+        """API methods
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -119,6 +124,13 @@ class KeyValueStoreServicer(object):
 
     def doAbort(self, request, context):
         """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def vote(self, request, context):
+        """Decentralized.py
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -161,11 +173,15 @@ def add_KeyValueStoreServicer_to_server(servicer, server):
                     request_deserializer=proto_dot_store__pb2.DoAbortRequest.FromString,
                     response_serializer=proto_dot_store__pb2.DoAbortResponse.SerializeToString,
             ),
+            'vote': grpc.unary_unary_rpc_method_handler(
+                    servicer.vote,
+                    request_deserializer=proto_dot_store__pb2.VoteRequest.FromString,
+                    response_serializer=proto_dot_store__pb2.VoteResponse.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
             'distributedstore.KeyValueStore', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('distributedstore.KeyValueStore', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
@@ -351,6 +367,33 @@ class KeyValueStore(object):
             '/distributedstore.KeyValueStore/doAbort',
             proto_dot_store__pb2.DoAbortRequest.SerializeToString,
             proto_dot_store__pb2.DoAbortResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def vote(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/distributedstore.KeyValueStore/vote',
+            proto_dot_store__pb2.VoteRequest.SerializeToString,
+            proto_dot_store__pb2.VoteResponse.FromString,
             options,
             channel_credentials,
             insecure,

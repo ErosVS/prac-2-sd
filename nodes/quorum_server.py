@@ -11,13 +11,14 @@ QUORUM_WRITE = 3
 
 
 class QuorumServer(store_pb2_grpc.KeyValueStoreServicer):
-    def __init__(self, node_id, node_weight, data, self_peer, peers):
+    def __init__(self, node_id, node_weight, data, self_peer, peers, lock):
         self.node_id = node_id
         self.node_weight = node_weight
         self.self_peer = self_peer
         self.peers = peers
         self.seconds = 0  # Delay
         self.data = data
+        self.lock = lock
         # Logger
         self.logger = self.setup_logger()
 
@@ -44,7 +45,8 @@ class QuorumServer(store_pb2_grpc.KeyValueStoreServicer):
     def get(self, request, context):
         key = request.key
         time.sleep(self.seconds)
-        value = self.data.get(key)
+        with self.lock:
+            value = self.data.get(key)
         vote_count = self.node_weight
         quorum_reached = False
 
@@ -74,8 +76,9 @@ class QuorumServer(store_pb2_grpc.KeyValueStoreServicer):
 
     def doCommit(self, request, context):
         key, value = request.key, request.value
-        self.data[key] = value
-        self.save_data()
+        with self.lock:
+            self.data[key] = value
+            self.save_data()
         return store_pb2.CommitResponse(success=True)
 
     def put(self, request, context):
@@ -97,8 +100,9 @@ class QuorumServer(store_pb2_grpc.KeyValueStoreServicer):
         # Quorum higher or equal than QUORUM_WRITE value
         if quorum_reached:
             # Save to actual node new value
-            self.data[key] = value
-            self.save_data()
+            with self.lock:
+                self.data[key] = value
+                self.save_data()
             for peer in self.peers:
                 if peer != self.self_peer:
                     with grpc.insecure_channel(peer) as channel:
