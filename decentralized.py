@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     # Start servers
     for i, server in enumerate(servers):
-        print(f"Starting server: {i + 1}")
+        # print(f"Starting server: {i + 1}")
         server.start()
         time.sleep(1)
 

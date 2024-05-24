@@ -45,6 +45,7 @@ class QuorumServer(store_pb2_grpc.KeyValueStoreServicer):
     def get(self, request, context):
         key = request.key
         time.sleep(self.seconds)
+        value = "HOLA"
         with self.lock:
             value = self.data.get(key)
         vote_count = self.node_weight

@@ -45,7 +45,6 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
         channels = []
         stubs = []
         for slave in self.slaves:
-            print(slave)
             channel_address = f"{slave['ip']}:{slave['port']}"
             channel = grpc.insecure_channel(channel_address)
             if not self.wait_for_server(channel):
@@ -104,7 +103,7 @@ class MasterNode(store_pb2_grpc.KeyValueStoreServicer):
             can_commit_responses = self.send_request_to_slaves(can_commit_request, 'canCommit')
 
             if any(response is None or not response.vote for response in can_commit_responses):
-                print("canCommit failed. Coordinator voted NO.")
+                self.logger.error("canCommit failed. Coordinator voted NO.")
                 if can_commit_responses[0].value == can_commit_responses[1].value:
                     do_abort_request = store_pb2.DoAbortRequest(key=key,
                                                                 value=can_commit_responses[0].value)
