@@ -62,6 +62,8 @@ Las principales decisiones de diseño incluyen:
 - **Ralentización del Maestro**: 41.38 segundos para 400 operaciones.
 - **Ralentización del Esclavo**: 21.17 segundos para 400 operaciones.
 
+
+
 #### Sistema Descentralizado
 
 - **Operaciones Normales**: 1.62 segundos para 400 operaciones.
