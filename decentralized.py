@@ -46,18 +46,18 @@ if __name__ == '__main__':
         node_weight = node['weight']
         peer = f"{node['ip']}:{node['port']}"
         data = load_data(node_id)
-        quorum_node = QuorumServer(node_id, node_weight, peer, peers)
+        quorum_node = QuorumServer(node_id, node_weight, data, peer, peers)
 
         # Config servers and servicers
-        server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         store_pb2_grpc.add_KeyValueStoreServicer_to_server(quorum_node, server)
         server.add_insecure_port(peer)
         peers.append(peer)
         servers.append(server)
 
     # Start servers
-    for server in servers:
-        print(f"Starting server: {server}")
+    for i, server in enumerate(servers):
+        print(f"Starting server: {i + 1}")
         server.start()
         time.sleep(1)
 

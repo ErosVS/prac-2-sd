@@ -1,3 +1,4 @@
+import json
 import time
 import logging
 import grpc
@@ -10,13 +11,13 @@ QUORUM_WRITE = 3
 
 
 class QuorumServer(store_pb2_grpc.KeyValueStoreServicer):
-    def __init__(self, node_id, node_weight, self_peer, peers):
+    def __init__(self, node_id, node_weight, data, self_peer, peers):
         self.node_id = node_id
         self.node_weight = node_weight
         self.self_peer = self_peer
         self.peers = peers
         self.seconds = 0  # Delay
-        self.data = {}
+        self.data = data
         # Logger
         self.logger = self.setup_logger()
 
@@ -41,30 +42,32 @@ class QuorumServer(store_pb2_grpc.KeyValueStoreServicer):
         return store_pb2.RestoreResponse(success=True)
 
     def get(self, request, context):
-        print(self.data[request.key])
-        return store_pb2.GetResponse(value=self.data[request.key], found=True)
+        key = request.key
+        time.sleep(self.seconds)
+        value = self.data.get(key)
+        vote_count = self.node_weight
+        quorum_reached = False
 
-    # def get(self, request, context):
-    #     key = request.key
-    #     value = self.data.get(key, "")
-    #     vote_count = self.node_weight
-    #     quorum_reached = False
-    #
-    #     # Gather votes from other nodes
-    #     for peer in self.peers:
-    #         with grpc.insecure_channel(peer) as channel:
-    #             stub = quorum_pb2_grpc.QuorumServiceStub(channel)
-    #             vote_request = quorum_pb2.VoteRequest(key=key, value="", operation="get")
-    #             response = stub.Vote(vote_request)
-    #             vote_count += response.vote
-    #             if vote_count >= 2:
-    #                 quorum_reached = True
-    #                 break
-    #
-    #     if quorum_reached:
-    #         return quorum_pb2.GetResponse(value=value, success=True)
-    #     else:
-    #         return quorum_pb2.GetResponse(value="", success=False)
+        for peer in self.peers:
+            if peer != self.self_peer:
+                with grpc.insecure_channel(peer) as channel:
+                    stub = store_pb2_grpc.KeyValueStoreStub(channel)
+                    vote_request = store_pb2.VoteRequest(key=key, value=value)
+                    vote_response = stub.vote(vote_request)
+                    vote_count += vote_response.weight
+                    if vote_count >= QUORUM_WRITE:
+                        quorum_reached = True
+                        break
+
+        if quorum_reached:
+            return store_pb2.GetResponse(value=value, found=True)
+        else:
+            return store_pb2.GetResponse(value="", found=False)
+
+    # Save data to database
+    def save_data(self):
+        with open(f'db/decentralized/{self.node_id}_data.json', 'w') as f:
+            json.dump(self.data, f)
 
     def vote(self, request, context):
         return store_pb2.VoteResponse(weight=self.node_weight)
@@ -72,10 +75,12 @@ class QuorumServer(store_pb2_grpc.KeyValueStoreServicer):
     def doCommit(self, request, context):
         key, value = request.key, request.value
         self.data[key] = value
+        self.save_data()
         return store_pb2.CommitResponse(success=True)
 
     def put(self, request, context):
         key, value = request.key, request.value
+        time.sleep(self.seconds)
         vote_count = self.node_weight
         quorum_reached = False
         for peer in self.peers:
@@ -93,6 +98,7 @@ class QuorumServer(store_pb2_grpc.KeyValueStoreServicer):
         if quorum_reached:
             # Save to actual node new value
             self.data[key] = value
+            self.save_data()
             for peer in self.peers:
                 if peer != self.self_peer:
                     with grpc.insecure_channel(peer) as channel:

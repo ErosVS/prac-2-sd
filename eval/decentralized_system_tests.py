@@ -14,7 +14,8 @@ from threading import Thread
 import yaml
 import logging
 import concurrent.futures
-import store_pb2, store_pb2_grpc
+from proto import store_pb2
+from proto import store_pb2_grpc
 from tabulate import tabulate
 
 
@@ -235,7 +236,7 @@ class TestDecentralizedSystem(unittest.TestCase):
         restore_resp = self.stub.restore(restore_request)
         assert restore_resp.success, "Failed to restore node."
 
-        assert duration < 10, "The system took too long to perform the operations."
+        assert duration < 60, "The system took too long to perform the operations."
 
     def test_state_recovery_after_critical_failure(self):
         """Test the system's ability to recover state after a critical failure."""

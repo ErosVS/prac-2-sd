@@ -27,7 +27,10 @@ def remove_files():
     files_to_remove = [
         'db/centralized/master_data.json',
         'db/centralized/slave_1_data.json',
-        'db/centralized/slave_2_data.json'
+        'db/centralized/slave_2_data.json',
+        'db/decentralized/node_1_data.json',
+        'db/decentralized/node_2_data.json',
+        'db/decentralized/node_3_data.json'
     ]
 
     for file_path in files_to_remove:
